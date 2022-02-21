@@ -218,6 +218,8 @@ if __name__ == "__main__":
 
     import setproctitle
 
+    os.environ['DISPLAY'] = ':0.0'
+
     parser = argparse.ArgumentParser(description="gen lm train_pbr xyz")
     parser.add_argument("--dataset", type=str, default="denstereo-test", help="dataset")
     parser.add_argument("--split", type=str, default="train_pbr_left", help="split")
