@@ -48,7 +48,7 @@ IM_W = 640
 near = 0.01
 far = 6.5
 
-data_dir = osp.normpath(osp.join(PROJ_ROOT, "datasets/BOP_DATASETS/lm/train_pbr"))
+data_dir = osp.normpath(osp.join(PROJ_ROOT, "datasets/BOP_DATASETS/"))
 
 cls_indexes = sorted(idx2class.keys())
 cls_names = [idx2class[cls_idx] for cls_idx in cls_indexes]
@@ -57,7 +57,7 @@ model_paths = [osp.join(lm_model_dir, f"obj_{obj_id:06d}.ply") for obj_id in cls
 texture_paths = None
 
 scenes = [i for i in range(0, 49 + 1)]
-xyz_root = osp.normpath(osp.join(PROJ_ROOT, "datasets/BOP_DATASETS/lm/train_pbr/xyz_crop"))
+# xyz_root = osp.normpath(osp.join(PROJ_ROOT, "datasets/BOP_DATASETS/lm/train_pbr/xyz_crop"))
 
 K = np.array([[572.4114, 0, 325.2611], [0, 573.57043, 242.04899], [0, 0, 1]])
 
@@ -76,10 +76,10 @@ def get_emb_show(bbox_emb):
 
 
 class XyzGen(object):
-    def __init__(self, split="train", scene="all"):
-        if split == "train":
+    def __init__(self, dataset="lm", split="train_pbr", scene="all"):
+        if split == "train" or split == "train_pbr":
             scene_ids = scenes
-            data_root = data_dir
+            data_root = osp.normpath(osp.join(data_dir, dataset, split))
         else:
             raise ValueError(f"split {split} error")
 
@@ -94,6 +94,7 @@ class XyzGen(object):
         self.sel_scene_ids = sel_scene_ids
         self.data_root = data_root
         self.renderer = None
+        self.xyz_root = osp.normpath(osp.join(PROJ_ROOT, "datasets/BOP_DATASETS", dataset, split, "xyz_crop"))
 
     def get_renderer(self):
         if self.renderer is None:
@@ -129,7 +130,7 @@ class XyzGen(object):
                     # pose = np.hstack([R, t.reshape(3, 1)])
 
                     save_path = osp.join(
-                        xyz_root,
+                        self.xyz_root,
                         f"{scene_id:06d}/{int_im_id:06d}_{anno_i:06d}-xyz.pkl",
                     )
                     # if osp.exists(save_path) and osp.getsize(save_path) > 0:
@@ -213,8 +214,10 @@ if __name__ == "__main__":
     import setproctitle
 
     parser = argparse.ArgumentParser(description="gen lm train_pbr xyz")
-    parser.add_argument("--split", type=str, default="train", help="split")
+    parser.add_argument("--dataset", type=str, default="lm", help="dataset")
+    parser.add_argument("--split", type=str, default="train_pbr", help="split")
     parser.add_argument("--scene", type=str, default="all", help="scene id")
+    parser.add_argument("--end_scene", type=int, default=-1, help="num of scene id")
     parser.add_argument("--vis", default=False, action="store_true", help="vis")
     parser.add_argument("--no-save", default=False, action="store_true", help="do not save results")
     args = parser.parse_args()
@@ -224,9 +227,18 @@ if __name__ == "__main__":
 
     VIS = args.vis
 
-    T_begin = time.perf_counter()
-    setproctitle.setproctitle(f"gen_xyz_lm_train_pbr_{args.split}_{args.scene}")
-    xyz_gen = XyzGen(args.split, args.scene)
-    xyz_gen.main()
-    T_end = time.perf_counter() - T_begin
-    print("split", args.split, "scene", args.scene, "total time: ", T_end)
+    if args.end_scene > -1:
+        for scene in range(int(args.scene), args.end_scene+1):
+            T_begin = time.perf_counter()
+            setproctitle.setproctitle(f"gen_xyz_lm_train_pbr_{args.dataset}_{args.split}_{args.scene}")
+            xyz_gen = XyzGen(args.dataset, args.split, scene)
+            xyz_gen.main()
+            T_end = time.perf_counter() - T_begin
+            print("dataset", args.dataset, "split", args.split, "scene", args.scene, "total time: ", T_end)
+    else:
+        T_begin = time.perf_counter()
+        setproctitle.setproctitle(f"gen_xyz_lm_train_pbr_{args.dataset}_{args.split}_{args.scene}")
+        xyz_gen = XyzGen(args.dataset, args.split, args.scene)
+        xyz_gen.main()
+        T_end = time.perf_counter() - T_begin
+        print("dataset", args.dataset, "split", args.split, "scene", args.scene, "total time: ", T_end)

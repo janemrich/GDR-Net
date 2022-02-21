@@ -54,18 +54,19 @@ IM_W = 640
 near = 0.01
 far = 6.5
 
-data_dir = osp.normpath(osp.join(PROJ_ROOT, "datasets/BOP_DATASETS/denstereo-test/train_pbr_left"))
+data_dir = osp.normpath(osp.join(PROJ_ROOT, "datasets/BOP_DATASETS/"))
 
 cls_indexes = sorted(idx2class.keys())
 cls_names = [idx2class[cls_idx] for cls_idx in cls_indexes]
-model_dir = osp.normpath(osp.join(PROJ_ROOT, "datasets/BOP_DATASETS/denstereo/models"))
+#model_dir = osp.normpath(osp.join(PROJ_ROOT, "datasets/BOP_DATASETS/denstereo/models"))
+model_dir = osp.normpath("/home/jemrich/datasets/BOP_DATASETS/denstereo/models")
 model_paths = [osp.join(model_dir, f"obj_{obj_id:06d}.ply") for obj_id in cls_indexes]
 texture_paths = None
 
 scenes = [i for i in range(0, 49 + 1)]
 
-K = np.array([[572.4114, 0, 325.2611], [0, 573.57043, 242.04899], [0, 0, 1]])
-
+# K = np.array([[572.4114, 0, 325.2611], [0, 573.57043, 242.04899], [0, 0, 1]])
+K = np.array([[1066.7779541015625, 0.0, 312.98690807819366], [0.0, 1067.4870531406486, 241.31089784012457], [0.0, 0.0, 1.0]])
 
 def normalize_to_01(img):
     if img.max() != img.min():
@@ -84,7 +85,7 @@ class XyzGen(object):
     def __init__(self, dataset="denstereo-test", split="train", scene="all"):
         if split == "train" or "train_pbr_right" or "train_pbr_left":
             scene_ids = scenes
-            data_root = data_dir
+            data_root = osp.normpath(osp.join(data_dir, dataset, split))
         else:
             raise ValueError(f"split {split} error")
 
@@ -224,6 +225,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str, default="denstereo-test", help="dataset")
     parser.add_argument("--split", type=str, default="train_pbr_left", help="split")
     parser.add_argument("--scene", type=str, default="all", help="scene id")
+    parser.add_argument("--num_scenes", type=int, default=1, help="num of scene id")
     parser.add_argument("--vis", default=False, action="store_true", help="vis")
     parser.add_argument("--no-save", default=False, action="store_true", help="do not save results")
     args = parser.parse_args()
@@ -233,9 +235,18 @@ if __name__ == "__main__":
 
     VIS = args.vis
 
-    T_begin = time.perf_counter()
-    setproctitle.setproctitle(f"gen_xyz_lm_train_pbr_{args.dataset}_{args.split}_{args.scene}")
-    xyz_gen = XyzGen(args.dataset, args.split, args.scene)
-    xyz_gen.main()
-    T_end = time.perf_counter() - T_begin
-    print("dataset", args.dataset, "split", args.split, "scene", args.scene, "total time: ", T_end)
+    if args.num_scenes > 1:
+        for scene in range(int(args.scene), args.num_scenes):
+            T_begin = time.perf_counter()
+            setproctitle.setproctitle(f"gen_xyz_lm_train_pbr_{args.dataset}_{args.split}_{args.scene}")
+            xyz_gen = XyzGen(args.dataset, args.split, scene)
+            xyz_gen.main()
+            T_end = time.perf_counter() - T_begin
+            print("dataset", args.dataset, "split", args.split, "scene", args.scene, "total time: ", T_end)
+    else:
+        T_begin = time.perf_counter()
+        setproctitle.setproctitle(f"gen_xyz_lm_train_pbr_{args.dataset}_{args.split}_{args.scene}")
+        xyz_gen = XyzGen(args.dataset, args.split, args.scene)
+        xyz_gen.main()
+        T_end = time.perf_counter() - T_begin
+        print("dataset", args.dataset, "split", args.split, "scene", args.scene, "total time: ", T_end)
