@@ -65,8 +65,7 @@ texture_paths = None
 
 scenes = [i for i in range(0, 49 + 1)]
 
-# K = np.array([[572.4114, 0, 325.2611], [0, 573.57043, 242.04899], [0, 0, 1]])
-K = np.array([[1066.7779541015625, 0.0, 312.98690807819366], [0.0, 1067.4870531406486, 241.31089784012457], [0.0, 0.0, 1.0]])
+K = np.array([[1066.7779541015625, 0.0, 312.98690807819366], [0.0, 1067.4870531406486, 241.31089784012457], [0.0, 0.0, 1.0]]) # denstereo pbr cam
 
 def normalize_to_01(img):
     if img.max() != img.min():
@@ -139,8 +138,8 @@ class XyzGen(object):
                         self.xyz_root,
                         f"{scene_id:06d}/{int_im_id:06d}_{anno_i:06d}-xyz.pkl",
                     )
-                    # if osp.exists(save_path) and osp.getsize(save_path) > 0:
-                    #     continue
+                    if osp.exists(save_path) and osp.getsize(save_path) > 0:
+                        continue
 
                     render_obj_id = cls_indexes.index(obj_id)  # 0-based
                     bgr_gl, depth_gl = self.get_renderer().render(render_obj_id, IM_W, IM_H, K, R, t, near, far)
@@ -218,8 +217,6 @@ if __name__ == "__main__":
     import time
 
     import setproctitle
-
-    os.environ['DISPLAY'] = ':0.0'
 
     parser = argparse.ArgumentParser(description="gen lm train_pbr xyz")
     parser.add_argument("--dataset", type=str, default="denstereo-test", help="dataset")
